@@ -6,28 +6,32 @@ import sys
 
 from Crypto.Cipher import DES
 
-import config
-
-CA_CERT = config.CERT_DIR + 'ca.crt'
+CA_CERT = 'cert/ca.crt'
 SERVER_HOSTNAME = 'hhyserver.com'
+HISTORY_KEY = b'123456'
+HISTORY_FILE = 'data/history.bin'
+SERVER_PORT = 7890
 
-des_obj = DES.new(config.HISTORY_KEY, DES.MODE_ECB)
+des_obj = DES.new(HISTORY_KEY, DES.MODE_ECB)
+
 
 def prompt():
     sys.stdout.write('<You> ')
     sys.stdout.flush()
 
+
 # 保存消息到聊天记录
-def save_message(message):
+def save_message(message: str):
     message = message + (8 - len(message) % 8) * ' '  # 八字节对齐
     ciphertext = des_obj.encrypt(message.encode())
     pass_hex = binascii.b2a_hex(ciphertext)
-    with open(config.HISTORY_FILE, 'ab') as file:
+    with open(HISTORY_FILE, 'ab') as file:
         file.write(pass_hex)
+
 
 def main():
     hostaddr = '127.0.0.1'
-    port = config.SERVER_PORT
+    port = SERVER_PORT
 
     argc = len(sys.argv)
     if argc > 3:
@@ -58,19 +62,21 @@ def main():
         read_sockets, write_sockets, error_sockets = select.select([sys.stdin, ssl_sock], [], [])
         for sock in read_sockets:
             if sock == ssl_sock:
-                data = sock.recv(config.RECV_BUF_LEN)
+                data = sock.recv(1024)
                 if not data:
                     print('\nDisconnected from chat server')
                     sock.close()
                     return
                 else:
+                    save_message(data.decode())
                     sys.stdout.write(data.decode())
                     prompt()
             else:
                 msg = sys.stdin.readline()
-                if msg == 'quit':
+                if msg == '!q':
                     sock.close()
                     return
+                save_message(msg)
                 ssl_sock.send(msg.encode())
                 prompt()
 

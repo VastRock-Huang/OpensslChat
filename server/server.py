@@ -1,20 +1,15 @@
-import signal
-import socket
 import select
+import socket
 import ssl
-import binascii
-from Crypto.Cipher import DES
 
-import config
-
-CERT_FILE = config.CERT_DIR + 'server.crt'
-KEY_FILE = config.CERT_DIR + 'server.key'
+SERVER_PORT = 7890
+CERT_FILE = 'cert/server.crt'
+KEY_FILE = 'cert/server.key'
 CERT_PASSWORD = '123456'
 
 
 conn_list = []  # 连接池
 server_socket = None
-des_obj = DES.new(config.HISTORY_KEY, DES.MODE_ECB)
 # 创建默认SSL上下文
 context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
 context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE,
@@ -34,26 +29,17 @@ def broadcast_data(src_sock: ssl.SSLSocket, msg: str):
                 conn_list.remove(sock)
 
 
-# 保存消息到聊天记录
-def save_message(message):
-    message = message + (8 - len(message) % 8) * ' '  # 八字节对齐
-    ciphertext = des_obj.encrypt(message.encode())
-    pass_hex = binascii.b2a_hex(ciphertext)
-    with open('data/history.bin.bin', 'ab') as file:
-        file.write(pass_hex)
-
-
 def main():
     global server_socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # SOL_SOCKET: 套接字级别设置
     # SO_REUSEADDR: 地址复用
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(('', config.SERVER_PORT))
+    server_socket.bind(('', SERVER_PORT))
     # 监听连接,参数为最大未accept的连接数
     server_socket.listen(2)
     conn_list.append(server_socket)
-    print("Chat server started on port " + str(config.SERVER_PORT))
+    print("Chat server started on port " + str(SERVER_PORT))
 
     conn_map = {}
     while True:
@@ -67,18 +53,17 @@ def main():
                 conn_list.append(ssl_sock)
                 conn_map[ssl_sock] = addr
                 print("Client [%s, %s] connected" % addr)
-                broadcast_data(ssl_sock, "[%s, %s] entered room\n" % addr)
+                broadcast_data(ssl_sock, "[%s:%s] entered room\n" % addr)
             else:
                 addr, port = conn_map[sock]
-                data = sock.read(config.RECV_BUF_LEN)
+                data = sock.read(1024)
                 if data:
-                    message = '\n<%s, %s> %s' % (addr, port, data.decode())
+                    message = '\n<%s:%s> %s' % (addr, port, data.decode())
                     # 转发消息给其它用户
                     broadcast_data(sock, message)
-                    save_message(message)
                 else:
-                    broadcast_data(sock, "Client [%s, %s] is offline" % (addr, port))
-                    print("Client [%s, %s] is offline" % (addr, port))
+                    broadcast_data(sock, "Client [%s:%s] is offline" % (addr, port))
+                    print("Client [%s:%s] is offline" % (addr, port))
                     sock.close()
                     conn_list.remove(sock)
 

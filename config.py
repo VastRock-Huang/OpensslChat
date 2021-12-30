@@ -1,9 +1,0 @@
-HISTORY_KEY = b'12345678'
-
-HISTORY_FILE = 'data/history.bin'
-
-CERT_DIR = 'cert/'
-
-SERVER_PORT = 9999
-
-RECV_BUF_LEN = 1024
