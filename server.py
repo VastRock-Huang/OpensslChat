@@ -23,8 +23,9 @@ def broadcast_data(src_sock: ssl.SSLSocket, msg: str):
     for sock in conn_list:
         if sock != server_socket and sock != src_sock:
             try:
-                sock.write(msg)
-            except:
+                sock.write(msg.encode())
+            except Exception as e:
+                print(e.args)
                 sock.close()
                 conn_list.remove(sock)
 
@@ -32,7 +33,7 @@ def broadcast_data(src_sock: ssl.SSLSocket, msg: str):
 # 保存消息到聊天记录
 def save_message(message):
     message = message + (8 - len(message) % 8) * ' '  # 八字节对齐
-    ciphertext = des_obj.encrypt(message)
+    ciphertext = des_obj.encrypt(message.encode())
     pass_hex = binascii.b2a_hex(ciphertext)
     with open('data/history.bin', 'ab') as file:
         file.write(pass_hex)
@@ -50,6 +51,7 @@ def main():
     conn_list.append(server_socket)
     print("Chat server started on port " + str(PORT))
 
+    conn_map = {}
     while True:
         # 多路复用返回可读连接列表
         read_sockets, _, _ = select.select(conn_list, [], [])
@@ -59,21 +61,20 @@ def main():
                 sockfd, addr = server_socket.accept()
                 ssl_sock = context.wrap_socket(sockfd, server_side=True)
                 conn_list.append(ssl_sock)
+                conn_map[ssl_sock] = addr
                 print("Client [%s, %s] connected" % addr)
                 broadcast_data(ssl_sock, "[%s, %s] entered room\n" % addr)
-            elif sock in conn_list:
-                addr = sock.getpeername()
-                try:
-                    data = sock.read(RECV_LEN)
-                    if data:
-                        # getpeername():返回套接字连接的远程地址
-                        message = '\n<' + str(sock.getpeername()) + '> ' + data
-                        # 转发消息给其它用户
-                        broadcast_data(sock, message)
-                        save_message(message)
-                except:
-                    broadcast_data(sock, "Client [%s, %s] is offline" % addr)
-                    print("Client [%s, %s] is offline" % addr)
+            else:
+                addr, port = conn_map[sock]
+                data = sock.read(RECV_LEN)
+                if data:
+                    message = '\n<%s, %s> %s' % (addr, port, data.decode())
+                    # 转发消息给其它用户
+                    broadcast_data(sock, message)
+                    save_message(message)
+                else:
+                    broadcast_data(sock, "Client [%s, %s] is offline" % (addr, port))
+                    print("Client [%s, %s] is offline" % (addr, port))
                     sock.close()
                     conn_list.remove(sock)
 

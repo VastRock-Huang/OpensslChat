@@ -1,36 +1,11 @@
 import selectors
-import socket
-import ssl
-import sys
+import socket, select, string, sys, ssl
 
-running = True
 
 def prompt():
     sys.stdout.write('<You> ')
     sys.stdout.flush()
 
-
-def recv_sock(sock, mask, arg):
-    data = sock.recv(4096)
-    if not data:
-        print('\nDisconnected from chat server')
-        sock.close()
-        global running
-        running = False
-        return
-    else:
-        sys.stdout.write(data)
-        prompt()
-
-def input_msg(stdin, mask, ssl_sock):
-    msg = sys.stdin.readline()
-    if msg == 'quit':
-        ssl_sock.close()
-        global running
-        running = False
-        return
-    ssl_sock.send(msg)
-    prompt()
 
 def main():
     if len(sys.argv) < 3:
@@ -56,14 +31,25 @@ def main():
     print('Connected to remote host. Start sending messages')
     prompt()
 
-    sel = selectors.DefaultSelector()
-    sel.register(ssl_sock, selectors.EVENT_READ, [recv_sock])
-    sel.register(sys.stdin, selectors.EVENT_READ, [input_msg, ssl_sock])
-
-    while running:
-        for key, mask in sel.select():
-            callback = key.data[0]
-            callback(key.fileobj, mask, key.data[1])
+    while True:
+        read_sockets, write_sockets, error_sockets = select.select([sys.stdin, ssl_sock], [], [])
+        for sock in read_sockets:
+            if sock == ssl_sock:
+                data = sock.recv(4096)
+                if not data:
+                    print('\nDisconnected from chat server')
+                    sock.close()
+                    return
+                else:
+                    sys.stdout.write(data.decode())
+                    prompt()
+            else:
+                msg = sys.stdin.readline()
+                if msg == 'quit':
+                    sock.close()
+                    return
+                ssl_sock.send(msg.encode())
+                prompt()
 
 
 if __name__ == "__main__":
