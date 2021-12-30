@@ -35,7 +35,7 @@ def save_message(message):
     message = message + (8 - len(message) % 8) * ' '  # 八字节对齐
     ciphertext = des_obj.encrypt(message.encode())
     pass_hex = binascii.b2a_hex(ciphertext)
-    with open('data/history.bin', 'ab') as file:
+    with open('data/history.bin.bin', 'ab') as file:
         file.write(pass_hex)
 
 
