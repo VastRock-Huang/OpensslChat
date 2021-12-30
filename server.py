@@ -5,16 +5,20 @@ import ssl
 import binascii
 from Crypto.Cipher import DES
 
+import config
+
+CERT_FILE = config.CERT_DIR + 'server.crt'
+KEY_FILE = config.CERT_DIR + 'server.key'
+CERT_PASSWORD = '123456'
+
+
 conn_list = []  # 连接池
-RECV_LEN = 1024
-PORT = 9999
-key = b'12345678'
 server_socket = None
-des_obj = DES.new(key, DES.MODE_ECB)
+des_obj = DES.new(config.HISTORY_KEY, DES.MODE_ECB)
 # 创建默认SSL上下文
 context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-context.load_cert_chain(certfile='./server.crt', keyfile='./server.key',
-                        password='123456')
+context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE,
+                        password=CERT_PASSWORD)
 
 
 # 数据广播到其它客户端
@@ -45,11 +49,11 @@ def main():
     # SOL_SOCKET: 套接字级别设置
     # SO_REUSEADDR: 地址复用
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(('', PORT))
+    server_socket.bind(('', config.SERVER_PORT))
     # 监听连接,参数为最大未accept的连接数
     server_socket.listen(2)
     conn_list.append(server_socket)
-    print("Chat server started on port " + str(PORT))
+    print("Chat server started on port " + str(config.SERVER_PORT))
 
     conn_map = {}
     while True:
@@ -66,7 +70,7 @@ def main():
                 broadcast_data(ssl_sock, "[%s, %s] entered room\n" % addr)
             else:
                 addr, port = conn_map[sock]
-                data = sock.read(RECV_LEN)
+                data = sock.read(config.RECV_BUF_LEN)
                 if data:
                     message = '\n<%s, %s> %s' % (addr, port, data.decode())
                     # 转发消息给其它用户
