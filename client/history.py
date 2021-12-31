@@ -3,7 +3,7 @@ from binascii import a2b_hex
 from Crypto.Cipher import DES
 
 MAX_TRY_TIMES = 4
-HISTORY_KEY = b'123456'
+HISTORY_KEY = b'12345678'
 HISTORY_FILE = 'data/history.bin'
 
 try_times = 0
