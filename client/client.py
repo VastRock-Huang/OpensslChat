@@ -26,15 +26,15 @@ def prompt():
 
 # 保存消息到聊天记录
 def save_message(message: str):
-    message = message + (8 - len(message) % 8) * ' '  # 八字节对齐
+    message = '\n' + message + (8 - (len(message)+1) % 8) * ' '  # 八字节对齐
     ciphertext = des_obj.encrypt(message.encode())
     pass_hex = binascii.b2a_hex(ciphertext)
     with open(HISTORY_DIR + user + '.bin', 'ab') as file:
         file.write(pass_hex)
 
 
-def wrap_message(msg: str):
-    return '$MSG$<' + user + ' ' + \
+def add_label(msg: str):
+    return '<' + user + ' ' + \
            time.strftime('%Y-%m-%d %H:%M:%S',
                          time.localtime(time.time())) + '> ' + msg
 
@@ -103,7 +103,7 @@ def running_online():
                     sock.close()
                     return
                 else:
-                    data = '\n' + data.decode()[5:]
+                    data = data.decode()[5:]
                     save_message(data)
                     sys.stdout.write(data)
                     prompt()
@@ -111,9 +111,9 @@ def running_online():
                 msg = sys.stdin.readline()
                 if msg == '!q\n':
                     return
-                msg = wrap_message(msg)
+                msg = add_label(msg)
                 save_message(msg)
-                ssl_sock.send(msg.encode())
+                ssl_sock.send('$MSG$'.encode() + msg.encode())
                 prompt()
 
 
