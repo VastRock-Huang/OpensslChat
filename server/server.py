@@ -6,8 +6,8 @@ import ssl
 import sys
 
 SERVER_PORT = 7890
-CERT_FILE = 'cert/server.crt'
-KEY_FILE = 'cert/server.key'
+SERVER_CERT = 'cert/server.crt'
+SERVER_KEY_FILE = 'cert/server.key'
 CERT_PASSWORD = '123456'
 USERS_FILE = 'data/users.ini'
 
@@ -75,7 +75,7 @@ def sign_in(sock: ssl.SSLSocket, data: str):
         conn_map[addr] = username
         print("User:'%s'%s is online\n" % (username, addr))
         sock.write('$SUC$'.encode())
-        msg = "$MSG$'%s' entered the chat room.\n" % username
+        msg = "\n$MSG$'%s' entered the chat room.\n" % username
         broadcast_data(sock, msg.encode())
 
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     conn_list = []  # 连接池
     # 创建默认SSL上下文
     context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-    context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE,
+    context.load_cert_chain(certfile=SERVER_CERT, keyfile=SERVER_KEY_FILE,
                             password=CERT_PASSWORD)
     user_dict = load_users()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

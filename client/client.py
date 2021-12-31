@@ -26,7 +26,7 @@ def prompt():
 
 # 保存消息到聊天记录
 def save_message(message: str):
-    message = '\n' + message + (8 - (len(message)+1) % 8) * ' '  # 八字节对齐
+    message = message + (8 - len(message) % 8) * ' '  # 八字节对齐
     ciphertext = des_obj.encrypt(message.encode())
     pass_hex = binascii.b2a_hex(ciphertext)
     with open(HISTORY_DIR + user + '.bin', 'ab') as file:
@@ -34,7 +34,7 @@ def save_message(message: str):
 
 
 def add_label(msg: str):
-    return '<' + user + ' ' + \
+    return '\n<' + user + ' ' + \
            time.strftime('%Y-%m-%d %H:%M:%S',
                          time.localtime(time.time())) + '> ' + msg
 

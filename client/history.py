@@ -41,5 +41,5 @@ while try_times < MAX_TRY_TIMES:
         print(plaintext.decode())
         break
     else:
-        print(f"Wrong Password! You only have %s trying times!" % (MAX_TRY_TIMES - try_times))
+        print("Wrong Password! You only have %s trying times!" % (MAX_TRY_TIMES - try_times))
         result = input("Input to try again, or Ctrl+C to quit")
