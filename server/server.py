@@ -12,12 +12,17 @@ CA_CERT = 'cert/ca.crt'
 CERT_PASSWORD = '123456'
 USERS_FILE = 'data/users.ini'
 
+conn_list = []  # 连接池
+active_users = set()  # 已在线用户
+conn_map = {}  # 连接地址-用户映射
 
-# 数据广播到其它客户端
+
 def broadcast_data(src_sock: ssl.SSLSocket, data: bytes):
+    """数据广播到其它客户端"""
     # global conn_list
     for sock in conn_list:
-        if sock != server_socket and sock != src_sock:
+        if sock != server_socket and sock != src_sock \
+                and sock.getpeername() in conn_map:
             try:
                 sock.write(data)
             except Exception as e:
@@ -37,14 +42,12 @@ def load_users():
         return user_dict
 
 
-def accept(sock):
+def accept():
+    """接收来自客户端的TCP连接，并使用OpenSSL进行双向认证和封装"""
     # 返回一个新套接字sockfd,以及另一端套接字绑定的地址addr(hostaddr,post)
     sockfd, _ = server_socket.accept()
     ssl_sock = context.wrap_socket(sockfd, server_side=True)
     conn_list.append(ssl_sock)
-    # conn_map[ssl_sock] = addr
-    # print("Client [%s:%s] connected" % addr)
-    # broadcast_data(ssl_sock, "[%s:%s] entered room\n" % addr)
 
 
 def sign_up(sock: ssl.SSLSocket, data: str):
@@ -102,7 +105,6 @@ def exit_prog(signum, frame):
 
 
 if __name__ == "__main__":
-    conn_list = []  # 连接池
     # 创建默认SSL上下文
     context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
     context.load_cert_chain(certfile=SERVER_CERT, keyfile=SERVER_KEY_FILE,
@@ -118,16 +120,14 @@ if __name__ == "__main__":
     server_socket.listen(2)
     conn_list.append(server_socket)
     print("Chat server started on port " + str(SERVER_PORT))
-    active_users = set()
-
     signal.signal(signal.SIGINT, exit_prog)
-    conn_map = {}
+
     while True:
         # 多路复用返回可读连接列表
         read_sockets, _, _ = select.select(conn_list, [], [])
         for sock in read_sockets:
             if sock == server_socket:
-                accept(sock)
+                accept()
             else:
                 # addr, port = conn_map[sock]
                 data = sock.read(1024)

@@ -20,14 +20,14 @@ SERVER_PORT = 7890
 
 
 def prompt():
-    sys.stdout.write('<You %s> ' %
-                     time.strftime('%Y-%m-%d %H:%M:%S',
-                                   time.localtime(time.time())))
+    sys.stdout.write('<You(%s) %s> ' % (user,
+                                        time.strftime('%Y-%m-%d %H:%M:%S',
+                                                      time.localtime(time.time()))))
     sys.stdout.flush()
 
 
-# 保存消息到聊天记录
 def save_message(message: str):
+    """保存消息到聊天记录"""
     message = message + (8 - len(message) % 8) * ' '  # 八字节对齐
     ciphertext = des_obj.encrypt(message.encode())
     pass_hex = binascii.b2a_hex(ciphertext)
@@ -96,7 +96,7 @@ def running_online():
     print('Connected to OpensslChat. Start sending messages')
     prompt()
     while True:
-        read_sockets, write_sockets, error_sockets = select.select([sys.stdin, ssl_sock], [], [])
+        read_sockets, _, _ = select.select([sys.stdin, ssl_sock], [], [])
         for sock in read_sockets:
             if sock == ssl_sock:
                 data = sock.recv(1024)
