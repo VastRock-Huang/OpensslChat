@@ -8,6 +8,7 @@ import sys
 SERVER_PORT = 7890
 SERVER_CERT = 'cert/server.crt'
 SERVER_KEY_FILE = 'cert/server.key'
+CA_CERT = 'cert/ca.crt'
 CERT_PASSWORD = '123456'
 USERS_FILE = 'data/users.ini'
 
@@ -106,6 +107,7 @@ if __name__ == "__main__":
     context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
     context.load_cert_chain(certfile=SERVER_CERT, keyfile=SERVER_KEY_FILE,
                             password=CERT_PASSWORD)
+    context.load_verify_locations(cafile=CA_CERT)
     user_dict = load_users()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # SOL_SOCKET: 套接字级别设置

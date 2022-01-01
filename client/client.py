@@ -10,6 +10,9 @@ from time import sleep
 from Crypto.Cipher import DES
 
 CA_CERT = 'cert/ca.crt'
+CLIENT_CERT = 'cert/client.crt'
+CLIENT_KEY_FILE = 'cert/client.key'
+CERT_PASSWORD = '123456'
 SERVER_HOSTNAME = 'hhyserver.com'
 HISTORY_KEY = b'12345678'
 HISTORY_DIR = 'data/history/'
@@ -141,6 +144,9 @@ if __name__ == "__main__":
     des_obj = DES.new(HISTORY_KEY, DES.MODE_ECB)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.load_cert_chain(certfile=CLIENT_CERT, keyfile=CLIENT_KEY_FILE,
+                            password=CERT_PASSWORD)
     context.load_verify_locations(CA_CERT)
     ssl_sock = context.wrap_socket(sock, server_hostname=SERVER_HOSTNAME)
     ssl_sock.settimeout(2)
