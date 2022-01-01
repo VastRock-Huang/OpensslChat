@@ -1,11 +1,10 @@
 import binascii
 import os.path
-import time
-from datetime import datetime
 import select
 import socket
 import ssl
 import sys
+import time
 from time import sleep
 
 from Crypto.Cipher import DES
