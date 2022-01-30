@@ -1,5 +1,5 @@
 # OpensslChat
-HUST, CSE, 2021 Network Security Program Design
+HUST, CSE, IS, 2021 Network Security Program Design
 ## 简要说明
 基于 OpenSSL 的安全聊天系统
 * 开发语言: Python 3
